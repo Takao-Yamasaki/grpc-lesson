@@ -1,0 +1,11 @@
+version: '3'
+services:
+  go:
+    build: .
+    ports:
+      - "3001:3001"
+    tty: true
+    volumes:
+      - .:/go/src/workspace
+    working_dir: /go/src/workspace
+    # TODO: volumeを準備すること

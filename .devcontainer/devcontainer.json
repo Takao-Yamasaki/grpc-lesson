@@ -1,0 +1,15 @@
+// > Dev containers: Open Folder in Container
+{
+  "name": "go-container",
+  "service": "go",
+  "workspaceFolder": "/go/src/workspace",
+  "dockerComposeFile": "../docker-compose.yml",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+	      "zxh404.vscode-proto3"
+      ]
+    }
+  }
+}
