@@ -7,5 +7,8 @@ services:
     tty: true
     volumes:
       - .:/go/src/workspace
+      - app-data:/app/data
     working_dir: /go/src/workspace
-    # TODO: volumeを準備すること
+
+volumes:
+  app-data:
