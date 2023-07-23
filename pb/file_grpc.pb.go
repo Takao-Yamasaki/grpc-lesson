@@ -122,7 +122,7 @@ func (c *fileServiceClient) UploadAndNotifyProgress(ctx context.Context, opts ..
 
 type FileService_UploadAndNotifyProgressClient interface {
 	Send(*UploadAndNotifyProgressRequest) error
-	CloseAndRecv() (*UploadAndNotifyProgressResponse, error)
+	Recv() (*UploadAndNotifyProgressResponse, error)
 	grpc.ClientStream
 }
 
@@ -134,10 +134,7 @@ func (x *fileServiceUploadAndNotifyProgressClient) Send(m *UploadAndNotifyProgre
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *fileServiceUploadAndNotifyProgressClient) CloseAndRecv() (*UploadAndNotifyProgressResponse, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
+func (x *fileServiceUploadAndNotifyProgressClient) Recv() (*UploadAndNotifyProgressResponse, error) {
 	m := new(UploadAndNotifyProgressResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -255,7 +252,7 @@ func _FileService_UploadAndNotifyProgress_Handler(srv interface{}, stream grpc.S
 }
 
 type FileService_UploadAndNotifyProgressServer interface {
-	SendAndClose(*UploadAndNotifyProgressResponse) error
+	Send(*UploadAndNotifyProgressResponse) error
 	Recv() (*UploadAndNotifyProgressRequest, error)
 	grpc.ServerStream
 }
@@ -264,7 +261,7 @@ type fileServiceUploadAndNotifyProgressServer struct {
 	grpc.ServerStream
 }
 
-func (x *fileServiceUploadAndNotifyProgressServer) SendAndClose(m *UploadAndNotifyProgressResponse) error {
+func (x *fileServiceUploadAndNotifyProgressServer) Send(m *UploadAndNotifyProgressResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -302,6 +299,7 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "UploadAndNotifyProgress",
 			Handler:       _FileService_UploadAndNotifyProgress_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},

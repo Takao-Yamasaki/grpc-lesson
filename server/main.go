@@ -99,6 +99,36 @@ func (*server) Upload(stream pb.FileService_UploadServer) error {
 	}
 }
 
+// 双方向ストリーミングRPC(Server側)
+func (*server) UploadAndNotifyProgress(stream pb.FileService_UploadAndNotifyProgressServer) error {
+	fmt.Println("UploadAndNotifyProgress wad Invoked")
+
+	size := 0
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		data := req.GetData()
+		log.Printf("received data: %v", data)
+		size += len(data)
+
+		res := &pb.UploadAndNotifyProgressResponse{
+			Msg: fmt.Sprintf("received %vbytes", size),
+		}
+		err = stream.Send(res)
+		if err != nil {
+			return err
+		}
+	}
+}
+
 func main() {
 	lis, err := net.Listen("tcp", "localhost:50051")
 	if err != nil {
