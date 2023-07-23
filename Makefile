@@ -21,3 +21,5 @@ server: ## Start Server
 	@go run server/main.go
 client: ## Start Client
 	@go run client/main.go
+middleware: ## Install go-grpc-middleware
+	@go get github.com/grpc-ecosystem/go-grpc-middleware

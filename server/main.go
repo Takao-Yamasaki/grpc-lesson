@@ -13,6 +13,9 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	// TODO: 認証処理から実装
+	// grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	// grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 )
 
 type server struct {
@@ -129,13 +132,28 @@ func (*server) UploadAndNotifyProgress(stream pb.FileService_UploadAndNotifyProg
 	}
 }
 
+func myLogging() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		log.Printf("request data: %+v", req)
+
+		// handlerはクライアントからコールされたメソッド
+		resp, err = handler(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("response data: %+v", resp)
+
+		return resp, nil
+	}
+}
+
 func main() {
 	lis, err := net.Listen("tcp", "localhost:50051")
 	if err != nil {
 		log.Fatalf("Fail to lesson: %v", err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(grpc.UnaryInterceptor(myLogging()))
 	pb.RegisterFileServiceServer(s, &server{})
 
 	fmt.Println("server is running...")

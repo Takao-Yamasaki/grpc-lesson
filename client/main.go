@@ -21,10 +21,10 @@ func main() {
 	defer conn.Close()
 
 	client := pb.NewFileServiceClient(conn)
-	// callListFiles(client)
+	callListFiles(client)
 	// callDownload(client)
 	// CallUpload(client)
-	CallUploadAndNotifyProgress(client)
+	// CallUploadAndNotifyProgress(client)
 }
 
 // Unary RPC(Client側)
