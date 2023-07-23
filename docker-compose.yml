@@ -7,8 +7,4 @@ services:
     tty: true
     volumes:
       - .:/go/src/workspace
-      - app-data:/app/data
     working_dir: /go/src/workspace
-
-volumes:
-  app-data:
