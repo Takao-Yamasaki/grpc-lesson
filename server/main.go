@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"grpc-lesson/pb"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -36,6 +39,38 @@ func (*server) ListFiles(ctx context.Context, req *pb.ListFilesRequest) (res *pb
 		Filenames: filenames,
 	}
 	return res, nil
+}
+
+func (*server) DownLoad(req *pb.DownloadRequest, stream pb.FileService_DownLoadServer) error {
+	fmt.Println("Download was Invoked...")
+
+	filename := req.GetFilename()
+
+	path := "/go/src/workspace/storage/" + filename
+
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	buf := make([]byte, 5)
+	for {
+		n, err := file.Read(buf)
+		if n == 0 || err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		res := &pb.DownloadResponse{Data: buf[:n]}
+		sendErr := stream.Send(res)
+		if sendErr != nil {
+			return sendErr
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return nil
 }
 
 func main() {
