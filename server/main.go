@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"grpc-lesson/pb"
@@ -18,6 +19,7 @@ type server struct {
 	pb.UnimplementedFileServiceServer
 }
 
+// Unary RPC(Server側)
 func (*server) ListFiles(ctx context.Context, req *pb.ListFilesRequest) (res *pb.ListFilesResponse, err error) {
 	fmt.Println("ListFiles was invoked")
 
@@ -41,6 +43,7 @@ func (*server) ListFiles(ctx context.Context, req *pb.ListFilesRequest) (res *pb
 	return res, nil
 }
 
+// サーバーストリーミングRPC(Server側)
 func (*server) DownLoad(req *pb.DownloadRequest, stream pb.FileService_DownLoadServer) error {
 	fmt.Println("Download was Invoked...")
 
@@ -71,6 +74,29 @@ func (*server) DownLoad(req *pb.DownloadRequest, stream pb.FileService_DownLoadS
 		time.Sleep(1 * time.Second)
 	}
 	return nil
+}
+
+// クライアンストリーミングRPC(Server側)
+// リクエストから送られてきたデータを順にbufに書き込み、io.EOFが送信されるとbufのサイズを返す
+func (*server) Upload(stream pb.FileService_UploadServer) error {
+	fmt.Println("Upload was invoked")
+
+	var buf bytes.Buffer
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			res := &pb.UploadResponse{Size: int32(buf.Len())}
+			return stream.SendAndClose(res)
+		}
+		if err != nil {
+			return err
+		}
+
+		data := req.GetData()
+		log.Printf("received data(bytes): %v", data)
+		log.Printf("received data(string): %v", string(data))
+		buf.Write(data)
+	}
 }
 
 func main() {
