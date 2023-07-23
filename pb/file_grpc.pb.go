@@ -25,6 +25,7 @@ type FileServiceClient interface {
 	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
 	DownLoad(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (FileService_DownLoadClient, error)
 	Upload(ctx context.Context, opts ...grpc.CallOption) (FileService_UploadClient, error)
+	UploadAndNotifyProgress(ctx context.Context, opts ...grpc.CallOption) (FileService_UploadAndNotifyProgressClient, error)
 }
 
 type fileServiceClient struct {
@@ -110,6 +111,40 @@ func (x *fileServiceUploadClient) CloseAndRecv() (*UploadResponse, error) {
 	return m, nil
 }
 
+func (c *fileServiceClient) UploadAndNotifyProgress(ctx context.Context, opts ...grpc.CallOption) (FileService_UploadAndNotifyProgressClient, error) {
+	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[2], "/file.FileService/UploadAndNotifyProgress", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &fileServiceUploadAndNotifyProgressClient{stream}
+	return x, nil
+}
+
+type FileService_UploadAndNotifyProgressClient interface {
+	Send(*UploadAndNotifyProgressRequest) error
+	CloseAndRecv() (*UploadAndNotifyProgressResponse, error)
+	grpc.ClientStream
+}
+
+type fileServiceUploadAndNotifyProgressClient struct {
+	grpc.ClientStream
+}
+
+func (x *fileServiceUploadAndNotifyProgressClient) Send(m *UploadAndNotifyProgressRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *fileServiceUploadAndNotifyProgressClient) CloseAndRecv() (*UploadAndNotifyProgressResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(UploadAndNotifyProgressResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility
@@ -117,6 +152,7 @@ type FileServiceServer interface {
 	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
 	DownLoad(*DownloadRequest, FileService_DownLoadServer) error
 	Upload(FileService_UploadServer) error
+	UploadAndNotifyProgress(FileService_UploadAndNotifyProgressServer) error
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -132,6 +168,9 @@ func (UnimplementedFileServiceServer) DownLoad(*DownloadRequest, FileService_Dow
 }
 func (UnimplementedFileServiceServer) Upload(FileService_UploadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Upload not implemented")
+}
+func (UnimplementedFileServiceServer) UploadAndNotifyProgress(FileService_UploadAndNotifyProgressServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadAndNotifyProgress not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 
@@ -211,6 +250,32 @@ func (x *fileServiceUploadServer) Recv() (*UploadRequest, error) {
 	return m, nil
 }
 
+func _FileService_UploadAndNotifyProgress_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(FileServiceServer).UploadAndNotifyProgress(&fileServiceUploadAndNotifyProgressServer{stream})
+}
+
+type FileService_UploadAndNotifyProgressServer interface {
+	SendAndClose(*UploadAndNotifyProgressResponse) error
+	Recv() (*UploadAndNotifyProgressRequest, error)
+	grpc.ServerStream
+}
+
+type fileServiceUploadAndNotifyProgressServer struct {
+	grpc.ServerStream
+}
+
+func (x *fileServiceUploadAndNotifyProgressServer) SendAndClose(m *UploadAndNotifyProgressResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *fileServiceUploadAndNotifyProgressServer) Recv() (*UploadAndNotifyProgressRequest, error) {
+	m := new(UploadAndNotifyProgressRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -232,6 +297,11 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Upload",
 			Handler:       _FileService_Upload_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "UploadAndNotifyProgress",
+			Handler:       _FileService_UploadAndNotifyProgress_Handler,
 			ClientStreams: true,
 		},
 	},
