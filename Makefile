@@ -14,11 +14,9 @@ install: ## Install Go Plugin for Protobuf
 ps: ## Check Container Status
 	@docker-compose ps
 protoc: ## Proto-Compiler for Go 
-	@protoc -I. --go_out=. proto/*.proto
+	@protoc -I. --go_out=. --go-grpc_out=. proto/*.proto
 mod: ## Install modules
 	@go mod tidy
-unary: ## Compile Unary RPC file
-	@protoc -I. --go_out=. --go-grpc_out=. proto/*.proto
 server: ## Start Server
 	@go run server/main.go
 client: ## Start Client
