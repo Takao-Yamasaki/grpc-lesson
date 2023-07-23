@@ -23,7 +23,8 @@ func main() {
 	client := pb.NewFileServiceClient(conn)
 	// callListFiles(client)
 	// callDownload(client)
-	CallUpload(client)
+	// CallUpload(client)
+	CallUploadAndNotifyProgress(client)
 }
 
 // Unary RPC(Client側)
@@ -100,4 +101,73 @@ func CallUpload(client pb.FileServiceClient) {
 	}
 
 	log.Printf("received data size: %v", res.GetSize())
+}
+
+// 双方向ストリーミングRPC(Client側)
+func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
+	filename := "sports.txt"
+	path := "/go/src/workspace/storage/" + filename
+
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer file.Close()
+
+	stream, err := client.UploadAndNotifyProgress(context.Background())
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// 並行処理(goroutine)
+	// request
+	buf := make([]byte, 5)
+	go func() {
+		for {
+			// 指定したファイルを読み込む
+			n, err := file.Read(buf)
+			// データの読み込み終了時にループを抜ける
+			if n == 0 || err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			req := &pb.UploadAndNotifyProgressRequest{Data: buf[:n]}
+			// streamでリクエストを行う
+			sendErr := stream.Send(req)
+			if sendErr != nil {
+				log.Fatalln(err)
+			}
+			time.Sleep(1 * time.Second)
+		}
+
+		// サーバー側にio.EOFが通知される
+		err := stream.CloseSend()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
+	// response
+	ch := make(chan struct{})
+	go func() {
+		for {
+			res, err := stream.Recv()
+			// サーバー側からクライアント側でio.EOFが通知されるので、ループを抜ける
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			log.Printf("Receved message: %v", res.GetMsg())
+		}
+		// チャネルをクローズ
+		close(ch)
+	}()
+	// 待機していたチャネルを抜けて全体の処理が終了する
+	<-ch
 }
